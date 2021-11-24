@@ -26,12 +26,11 @@ class ReviewClassifier():
         self.classifier = None
         self.minWordsAmount = 1  # 3  # 1
         self.maxWordsAmount = 2  # 10 # 2
-        self.maxFrequentCut = 14 # 11 # 14
-        self.trainFileName = trainFileName
-        self.distinctWords = dict()             # needed ??
-        self.wordsFrequency = None              # needed ?? Well Yes But No
+        self.maxFrequentCut = 500 # 11 # 14
+        self.wordsFrequency = None
         self.downsizer = Downscale()
-        self.vectorizer = CountVectorizer(analyzer='word', ngram_range=(self.minWordsAmount, self.maxWordsAmount), max_features=100000) # 100000
+        self.trainFileName = trainFileName
+        self.vectorizer = CountVectorizer(analyzer='word', ngram_range=(self.minWordsAmount, self.maxWordsAmount)) # , max_features=100000
     
     @staticmethod
     def __disassembleReview(review):
@@ -118,21 +117,13 @@ class ReviewClassifier():
             corpus[i] = self.__removePunctuation(line)
             corpus[i] = self.__removStopWords(corpus[i])
         
-        return corpus
-        
         self.__createMostFrequentWords(corpus)
         return self.__removeMostFrequentWords(corpus)
     
     def __createBagOfWords(self):
         """ create the distinct words and words frequency dictionary """
         corpus = self.__removeRedundancy(self.__disassembleAllReviews())
-        # corpus = self.__disassembleAllReviews()
         arrayOfAppearances = self.vectorizer.fit_transform(corpus)
-        
-        ## can be created and used to get the 1000 best feature
-        # for i, word in enumerate(self.vectorizer.get_feature_names_out()):
-        #     self.distinctWords[word] = i
-        
         return self.downsizer.fit_transform(arrayOfAppearances)
     
     @staticmethod
@@ -227,43 +218,32 @@ class ReviewClassifier():
         
         return self.__getPredictedData(predicted, trueResults)
     
-    def __testPossibilities(self, testFileName, minRange, maxRange, maxCut):
-        """ get the maximum possible accuracy of the model using an iteration over all the posiibilites """
+    def __testPossibilities(self, testFileName, maxCut=1000):
+        """ get the maximum possible accuracy of the model using an iteration over max frequent cut"""
         max_test_results = None
         current_test_results = {}
-        n, s, e = 0, 0, 0
         
-        for nCut in range(maxCut):
-            for startRange in range(1, minRange):
-                for endRange in range(minRange, maxRange):
+        for nCut in range(0, maxCut, 50):
+            self.maxFrequentCut = nCut
                     
-                    if startRange > endRange:
-                        continue
-                    
-                    self.minWordsAmount = startRange
-                    self.maxWordsAmount = endRange
-                    self.maxFrequentCut = nCut
-                    
-                    current_test_results = self.__getFitResults(testFileName, False)
-                    
-                    if max_test_results is None or max_test_results['accuracy'] < current_test_results['accuracy']:
-                        print("accuracy: {} || [{}: {}] => {}".format(current_test_results['accuracy'], startRange, endRange, nCut))
-                        max_test_results = current_test_results
-                        s, e, n = startRange, endRange, nCut
+            current_test_results = self.__getFitResults(testFileName, False)
+            
+            if max_test_results is None or max_test_results['accuracy'] < current_test_results['accuracy']:
+                max_test_results = current_test_results
         
-        print("accuracy: {} || [{}: {}] => {}".format(max_test_results['accuracy'], s, e, n))
         return max_test_results
     
     def fitNaiveBayes(self, testFileName):
         """ get the result of the model over the Naive Classifier """
         self.classifier = MultinomialNB()
-        # return self.__testPossibilities(testFileName, 3, 7, 15)
-        return self.__getFitResults(testFileName)
+        return self.__testPossibilities(testFileName)
+        # return self.__getFitResults(testFileName)
     
     def fitLogisticRegression(self, testFileName):
         """ get the result of the model over the Logistic Regression Classifier """
         self.classifier = LogisticRegression(random_state = 0)
-        return self.__getFitResults(testFileName)
+        return self.__testPossibilities(testFileName)
+        # return self.__getFitResults(testFileName)
     
     def fitSVM(self, testFileName):
         """ get the result of the model over the SVM Classifier """
