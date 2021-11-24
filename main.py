@@ -66,21 +66,8 @@ class ReviewClassifier():
             corpus[i] = self.__removStopWords(corpus[i])
             
         
-        if self.wordsFrequency is None:
-            allWords = " ".join(corpus)
-            self.wordsFrequency = defaultdict(int)
-            
-            for word in allWords.split():
-                self.wordsFrequency[word] += 1
-        
-        frequentWords = [keyValue[0] for keyValue in sorted(self.wordsFrequency.items(), key=lambda kv: kv[1], reverse=True)[:self.maxFrequentCut]]
-        
-        
-        ## remove from each star review this words from it
-        for i, line in enumerate(corpus):
-            corpus[i] = " ".join(list(filter(lambda x: x not in frequentWords, corpus[i].split())))
-        
-        return corpus
+        self.__createMostFrequentWords(corpus)
+        return self.__removeMostFrequentWords(corpus)
     
     @staticmethod
     def __removePunctuation(text):
@@ -109,6 +96,25 @@ class ReviewClassifier():
         
         return  " ".join(list(filter(lambda x: x not in stopwords and not x.isnumeric(), text.split())))
     
+    def __createMostFrequentWords(self, corpus):
+        """ creates the most frequent words dictionary """
+        
+        if self.wordsFrequency is None:
+            allWords = " ".join(corpus)
+            self.wordsFrequency = defaultdict(int)
+            
+            for word in allWords.split():
+                self.wordsFrequency[word] += 1
+    
+    def __removeMostFrequentWords(self, corpus):
+        frequentWords = [item[0] for item in sorted(self.wordsFrequency.items(), key=lambda kv: kv[1], reverse=True)[:self.maxFrequentCut]]
+        
+        ## remove from each star review this words from it
+        for i, line in enumerate(corpus):
+            corpus[i] = " ".join(list(filter(lambda x: x not in frequentWords, corpus[i].split())))
+        
+        return corpus
+        
     def __createBagOfWords(self):
         """ create the distinct words and words frequency dictionary """
         corpus = self.__removeRedundancy(self.__disassembleAllReviews())
@@ -182,8 +188,10 @@ class ReviewClassifier():
         """ fit the model per the clf given and predict according to the test file given """
         #TODO: kBest = SelectKBest(chi2, k=15).fit_transform(self.classifier.fit(self.__createBagOfWords(), self.__ReviewClass))
         self.classifier = self.classifier.fit(self.__createBagOfWords(), [x.value for x in self.__ReviewClass])
+        
         testReviewsData = list()
         testReviewsScore = list()
+        
         for review in open(testFileName, 'r').readlines():
             data, score = self.__disassembleReview(review)
             
@@ -195,7 +203,7 @@ class ReviewClassifier():
         
         new_data = self.vectorizer.transform(testReviewsData)
         tfidf = self.downsizer.transform(new_data)
-            
+        
         predicted = self.classifier.predict(tfidf)
         
         if self.debug:
