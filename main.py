@@ -1,4 +1,5 @@
-import json
+import hson
+import string
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import defaultdict
@@ -59,9 +60,9 @@ class ReviewClassifier():
         return rateArr
     
     def __removeRedundancy(self, corpus):
-        import string
+        """ remove punctuation, stopwords and most common words from the corpus """
         
-        punctuation = str.maketrans('', '', string.punctuation)
+        # punctuation = str.maketrans('', '', string.punctuation)
         stopwords = ['i', 'I','me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", "you've", "you'll", 
                          "you'd", 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 
                          'her', 'hers', 'herself', 'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 
@@ -79,10 +80,10 @@ class ReviewClassifier():
         
         for i, line in enumerate(corpus):
             ## remove punctuation
-            corpus[i] = ''.join(list(filter(lambda x: x != '', [line[row].translate(punctuation) for row in range(len(line))])))
+            corpus[i] = self.__removePunctuation(line) # ''.join(list(filter(lambda x: x != '', [line[row].translate(punctuation) for row in range(len(line))])))
             
             ## remove stopwords
-            corpus[i] = " ".join(list(filter(lambda x: x not in stopwords and not x.isnumeric(), corpus[i].split())))
+            corpus[i] = self.__removStopWords(corpus[i])  # " ".join(list(filter(lambda x: x not in stopwords and not x.isnumeric(), corpus[i].split())))
             
         
         if self.wordsFrequency is None:
@@ -103,10 +104,30 @@ class ReviewClassifier():
         
         return corpus
     
+    @staticmethod
     def __removePunctuation(text):
+        """ remove the punctuation from the text given and return it """
         punctuation = str.maketrans('', '', string.punctuation)
         return ''.join(list(filter(lambda x: x != '', [text[row].translate(punctuation) for row in range(len(text))])))
-        
+    
+    @staticmethod
+    def __removStopWords(text):
+        """ remove stop words from the text given """
+        stopwords = ['i', 'I','me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", "you've", "you'll", 
+                         "you'd", 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 
+                         'her', 'hers', 'herself', 'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 
+                         'what', 'which', 'who', 'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 'is', 'are', 'was', 'were', 
+                         'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 
+                         'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 
+                         'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 
+                         'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 
+                         'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 
+                         'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', "don't", 'should', "should've",
+                         'now', 'd', 'll', 'm', 'o', 're', 've', 'y', 'ain', 'aren', "aren't", 'couldn', "couldn't", 'didn', "didn't", 'doesn', 
+                         "doesn't", 'hadn', "hadn't", 'hasn', "hasn't", 'haven', "haven't", 'isn', "isn't", 'ma', 'mightn', "mightn't", 'mustn', 
+                         "mustn't", 'needn', "needn't", 'shan', "shan't", 'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't", 'won', 
+                         "won't", 'wouldn', "wouldn't"]
+        return  " ".join(list(filter(lambda x: x not in stopwords and not x.isnumeric(), text.split())))
     
     def __createBagOfWords(self):
         """ create the distinct words and words frequency dictionary """
@@ -125,11 +146,14 @@ class ReviewClassifier():
     
     @staticmethod
     def __printPrediction(testReviewsData, predicted):
+        """ print each text review next to his predicted data """
         for review, score in zip(predicted, predicted):
             print('%r => %s' % (predicted, score))
     
     @staticmethod
     def __getPredictedData(predicted, trueResults):
+        """ return a dictionary in the format of 'class_i.0_F1' and accuracy
+            each item get a precentage from the overall """
         overall = len(predicted)
         test_results = {'class_1.0_F1': 0.0, 'class_2.0_F1': 0.0, 'class_3.0_F1': 0.0,
                         'class_4.0_F1': 0.0, 'class_5.0_F1': 0.0, 'accuracy': 0.0}
@@ -148,6 +172,7 @@ class ReviewClassifier():
         return test_results       
 
     def __showConfusionMatrix(self, trueRes, pred):
+        """ show the confusion matrix of the test given """
         import warnings
         warnings.filterwarnings("ignore")
         
@@ -173,6 +198,7 @@ class ReviewClassifier():
         plt.show()
     
     def __fitModel(self, testFileName):
+        """ fit the model per the clf given and predict according to the test file given """
         #TODO: kBest = SelectKBest(chi2, k=15).fit_transform(self.classifier.fit(self.__createBagOfWords(), self.__ReviewClass))
         self.classifier = self.classifier.fit(self.__createBagOfWords(), [x.value for x in self.__ReviewClass])
         testReviewsData = list()
@@ -197,6 +223,7 @@ class ReviewClassifier():
         return predicted, testReviewsScore # , kBest
     
     def __getFitResults(self, testFileName, showMatrix=True):
+        """ get the result from the fit method """
         predicted, trueResults = self.__fitModel(testFileName)
         
         if showMatrix:
