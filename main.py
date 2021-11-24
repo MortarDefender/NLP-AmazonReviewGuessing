@@ -58,17 +58,6 @@ class ReviewClassifier():
             
         return rateArr
     
-    def __removeRedundancy(self, corpus):
-        """ remove punctuation, stopwords and most common words from the corpus """
-        
-        for i, line in enumerate(corpus):
-            corpus[i] = self.__removePunctuation(line)
-            corpus[i] = self.__removStopWords(corpus[i])
-            
-        
-        self.__createMostFrequentWords(corpus)
-        return self.__removeMostFrequentWords(corpus)
-    
     @staticmethod
     def __removePunctuation(text):
         """ remove the punctuation from the text given and return it """
@@ -107,6 +96,7 @@ class ReviewClassifier():
                 self.wordsFrequency[word] += 1
     
     def __removeMostFrequentWords(self, corpus):
+        """ remove the max frequent words from the corpus """
         frequentWords = [item[0] for item in sorted(self.wordsFrequency.items(), key=lambda kv: kv[1], reverse=True)[:self.maxFrequentCut]]
         
         ## remove from each star review this words from it
@@ -114,7 +104,17 @@ class ReviewClassifier():
             corpus[i] = " ".join(list(filter(lambda x: x not in frequentWords, corpus[i].split())))
         
         return corpus
+    
+    def __removeRedundancy(self, corpus):
+        """ remove punctuation, stopwords and most common words from the corpus """
         
+        for i, line in enumerate(corpus):
+            corpus[i] = self.__removePunctuation(line)
+            corpus[i] = self.__removStopWords(corpus[i])
+
+        self.__createMostFrequentWords(corpus)
+        return self.__removeMostFrequentWords(corpus)
+    
     def __createBagOfWords(self):
         """ create the distinct words and words frequency dictionary """
         corpus = self.__removeRedundancy(self.__disassembleAllReviews())
