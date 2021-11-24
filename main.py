@@ -11,6 +11,7 @@ from sklearn.feature_selection import SelectKBest, chi2
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer as Downscale
 
+from sklearn.ensemble import RandomForestClassifier
 
 class ReviewClassifier():
     class __ReviewClass(Enum):
@@ -220,6 +221,7 @@ class ReviewClassifier():
     
     def __testPossibilities(self, testFileName, maxCut=1000):
         """ get the maximum possible accuracy of the model using an iteration over max frequent cut"""
+        maxNCut = 0
         max_test_results = None
         current_test_results = {}
         
@@ -230,7 +232,10 @@ class ReviewClassifier():
             
             if max_test_results is None or max_test_results['accuracy'] < current_test_results['accuracy']:
                 max_test_results = current_test_results
+                maxNCut = nCut
         
+        self.maxFrequentCut = maxNCut
+        self.__getFitResults(testFileName)
         return max_test_results
     
     def fitNaiveBayes(self, testFileName):
