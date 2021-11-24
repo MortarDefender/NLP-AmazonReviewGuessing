@@ -1,4 +1,4 @@
 {
-  "train_data":  "./Test/Pet_Supplies.train.json",
-  "test_data": "./Test/Pet_Supplies.test.json"
+  "train_data":  "./Test/Automotive.test.json",
+  "test_data": "./Test/Automotive.test.json"
 }

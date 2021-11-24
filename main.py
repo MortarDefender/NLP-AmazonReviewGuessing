@@ -25,37 +25,43 @@ class ReviewClassifier():
         self.debug = False
         self.classifier = None
         self.minWordsAmount = 1  # 3  # 1
-        self.maxWordsAmount = 5  # 10 # 2
-        self.maxFrequentCut = 11 # 14
+        self.maxWordsAmount = 2  # 10 # 2
+        self.maxFrequentCut = 14 # 11 # 14
         self.trainFileName = trainFileName
         self.distinctWords = dict()             # needed ??
         self.wordsFrequency = None              # needed ?? Well Yes But No
         self.downsizer = Downscale()
-        self.vectorizer = CountVectorizer(analyzer='word', ngram_range=(self.minWordsAmount, self.maxWordsAmount))
+        self.vectorizer = CountVectorizer(analyzer='word', ngram_range=(self.minWordsAmount, self.maxWordsAmount), max_features=100000) # 100000
     
     @staticmethod
     def __disassembleReview(review):
         """ extract review text and overall """
         review = json.loads(review)
         
-        text = review.get("reviewText") if review.get("reviewText") is not None else None
+        text = review.get("reviewText") if review.get("reviewText") is not None and bool(review.get("verified")) else None
+        summery = review.get("summary") if review.get("summary") is not None and bool(review.get("verified")) else None
         score = int(review["overall"]) if review.get("overall") is not None else 0
         
-        return text, score
+        return text, summery, score
     
     def __disassembleAllReviews(self):
         """ join all i star reviews data into a single string array """
         rateArr = [""] * len(self.__ReviewClass)
-        
+         
         with open(self.trainFileName, 'r') as trainFile:
             lines = trainFile.readlines()
-            
+        
+        count = 0    
+        
         for review in lines:
-            text, score = self.__disassembleReview(review)
+            text, summery, score = self.__disassembleReview(review)
             
             if score != 0 and text is not None:
+                count += 1
                 rateArr[score - 1] += text + " "
-            
+                if summery is not None:
+                    rateArr[score - 1] += summery + " "
+        
         return rateArr
     
     @staticmethod
@@ -111,24 +117,22 @@ class ReviewClassifier():
         for i, line in enumerate(corpus):
             corpus[i] = self.__removePunctuation(line)
             corpus[i] = self.__removStopWords(corpus[i])
-
+        
+        return corpus
+        
         self.__createMostFrequentWords(corpus)
         return self.__removeMostFrequentWords(corpus)
     
     def __createBagOfWords(self):
         """ create the distinct words and words frequency dictionary """
         corpus = self.__removeRedundancy(self.__disassembleAllReviews())
+        # corpus = self.__disassembleAllReviews()
         arrayOfAppearances = self.vectorizer.fit_transform(corpus)
         
         ## can be created and used to get the 1000 best feature
         # for i, word in enumerate(self.vectorizer.get_feature_names_out()):
         #     self.distinctWords[word] = i
-
-        # for starReview in corpus:
-        #     for word in starReview:
-        #         self.wordsFrequency[word] += 1
-
-        # self.wordsFrequency = sorted(self.wordsFrequency.items(), key=lambda kv: kv[1])[:1000]
+        
         return self.downsizer.fit_transform(arrayOfAppearances)
     
     @staticmethod
@@ -193,10 +197,13 @@ class ReviewClassifier():
         testReviewsScore = list()
         
         for review in open(testFileName, 'r').readlines():
-            data, score = self.__disassembleReview(review)
+            data, summery, score = self.__disassembleReview(review)
             
             if score != 0 and data is not None:
-                testReviewsData.append(data)
+                if summery is not None:
+                    testReviewsData.append(data + " " + summery)
+                else:
+                    testReviewsData.append(data)
                 testReviewsScore.append(score)
         
         testReviewsData = self.__removeRedundancy(testReviewsData)
@@ -267,8 +274,8 @@ class ReviewClassifier():
 def classify(train_file, test_file):
     print('starting feature extraction and classification, train data:', train_file, 'and test:', test_file)
 
-    return ReviewClassifier(train_file).fitNaiveBayes(test_file)
-    # return ReviewClassifier(train_file).fitLogisticRegression(test_file)
+    # return ReviewClassifier(train_file).fitNaiveBayes(test_file)
+    return ReviewClassifier(train_file).fitLogisticRegression(test_file)
     # return ReviewClassifier(train_file).fitSVM(test_file)
 
 
