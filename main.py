@@ -26,7 +26,9 @@ class ReviewClassifier():
     
     def __init__(self, trainFileName):
         self.debug = False
+        self.corpus = list()
         self.classifier = None
+        self.maxFeatures = 1000
         self.minWordsAmount = 1
         self.maxWordsAmount = 2
         self.maxFrequentCut = 500
@@ -125,12 +127,12 @@ class ReviewClassifier():
     
     def __createBagOfWords(self):
         """ create the distinct words and words frequency dictionary """
-        corpus = self.__removeRedundancy(self.__disassembleAllReviews())
-        arrayOfAppearances = self.vectorizer.fit_transform(corpus)
+        self.corpus = self.__removeRedundancy(self.__disassembleAllReviews())
+        arrayOfAppearances = self.vectorizer.fit_transform(self.corpus)
         return self.downsizer.fit_transform(arrayOfAppearances)
     
     @staticmethod
-    def __printPrediction(testReviewsData, predicted):
+    def __printPrediction(testReviewsData, predicted):    # can be removed
         """ print each text review next to his predicted data """
         for review, score in zip(predicted, predicted):
             print('%r => %s' % (predicted, score))
@@ -158,43 +160,32 @@ class ReviewClassifier():
 
     def __showConfusionMatrix(self, trueRes, pred):
         """ show the confusion matrix of the test given """
-        matrix = confusion_matrix(trueRes, pred, labels=[x.value for x in self.__ReviewClass])
-        conf_mat = pd.DataFrame(matrix, index = [str(x.value) for x in self.__ReviewClass], columns = [str(x.value) for x in self.__ReviewClass])
-        print(conf_mat)
-        sns.heatmap(conf_mat, fmt="", annot=True)
+        # import warnings
+        # warnings.filterwarnings("ignore")
+        
+        confusionMatrix = confusion_matrix(trueRes, pred, labels=[x.value for x in self.__ReviewClass])
+        confusionDataFrame = pd.DataFrame(confusionMatrix, index = [str(x.value) for x in self.__ReviewClass], columns = [str(x.value) for x in self.__ReviewClass])
+        print(confusionDataFrame)
+        sns.heatmap(confusionDataFrame, fmt="", annot=True)
         plt.title('Confusion Matrix')
         plt.ylabel('Actal Values')
         plt.xlabel('Predicted Values')
         plt.show()
+    
+    def __getBestFeatures(self, maxFeaturesAmount=15):
+        """ return a list of the maxFeaturesAmount of the classifer given """
+        bestFeatures = list()
+        kBest = SelectKBest(chi2, k=maxFeaturesAmount).fit_transform(self.__createBagOfWords(), [x.value for x in self.__ReviewClass])
         
-        # import warnings
-        # warnings.filterwarnings("ignore")
+        for item in list(kBest.todok().keys()):
+            bestFeatures.append(self.corpus[item[0]].split(" ")[item[1]])
         
-        # confusionMatrix = [[]] * len(self.__ReviewClass)
-        
-        # for index in range(len(self.__ReviewClass)):
-        #     confusionMatrix[index] = [0] * len(self.__ReviewClass)
-        
-        # for trueScore, predictedScore in zip(trueRes, pred):
-        #     confusionMatrix[trueScore - 1][predictedScore - 1] += 1
-        
-        # # deprected
-        # for i, line in enumerate(confusionMatrix):
-        #     print(i, line)
-        
-        # labels =   ["1", "2", "3", "4", "5"]
-
-        # plotFigure = plt.figure()
-        # axesPlot = plotFigure.add_subplot(111)
-        # plotFigure.colorbar(axesPlot.matshow(confusionMatrix, cmap='binary'))
-        # axesPlot.set_xticklabels([""] + labels)
-        # axesPlot.set_yticklabels([""] + labels)
-        # plt.show()
+        return bestFeatures
     
     def __fitModel(self, testFileName):
         """ fit the model per the clf given and predict according to the test file given """
-        #TODO: kBest = SelectKBest(chi2, k=15).fit_transform(self.classifier.fit(self.__createBagOfWords(), self.__ReviewClass))
         self.classifier = self.classifier.fit(self.__createBagOfWords(), [x.value for x in self.__ReviewClass])
+        kBestFeatures = self.__getBestFeatures()
         
         testReviewsData = list()
         testReviewsScore = list()
@@ -216,17 +207,18 @@ class ReviewClassifier():
         
         predicted = self.classifier.predict(tfidf)
         
-        if self.debug:
+        if self.debug:  # can be removed
             self.__printPrediction(testReviewsData, predicted)
         
-        return predicted, testReviewsScore # , kBest
+        return predicted, testReviewsScore, kBestFeatures
     
     def __getFitResults(self, testFileName, showMatrix=True):
         """ get the result from the fit method """
-        predicted, trueResults = self.__fitModel(testFileName)
+        predicted, trueResults, kBestFeatures = self.__fitModel(testFileName)
         
         if showMatrix:
             self.__showConfusionMatrix(trueResults, predicted)
+            print("best Features: {}".format(kBestFeatures))
         
         return self.__getPredictedData(predicted, trueResults)
     
@@ -264,7 +256,8 @@ class ReviewClassifier():
     def fitSVM(self, testFileName):
         """ get the result of the model over the SVM Classifier """
         self.classifier = SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, random_state=42, max_iter=5, tol=None)
-        return self.__getFitResults(testFileName)
+        return self.__testPossibilities(testFileName)
+        # return self.__getFitResults(testFileName)
     
 
 def classify(train_file, test_file):
