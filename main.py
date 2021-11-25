@@ -1,9 +1,12 @@
 import json
 import string
 import numpy as np
+import pandas as pd
+import seaborn as sns
 from enum import Enum
 import matplotlib.pyplot as plt
 from collections import defaultdict
+from sklearn.metrics import confusion_matrix
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import SGDClassifier
 from sklearn.linear_model import LogisticRegression
@@ -11,7 +14,6 @@ from sklearn.feature_selection import SelectKBest, chi2
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer as Downscale
 
-from sklearn.ensemble import RandomForestClassifier
 
 class ReviewClassifier():
     class __ReviewClass(Enum):
@@ -25,9 +27,9 @@ class ReviewClassifier():
     def __init__(self, trainFileName):
         self.debug = False
         self.classifier = None
-        self.minWordsAmount = 1  # 3  # 1
-        self.maxWordsAmount = 2  # 10 # 2
-        self.maxFrequentCut = 500 # 11 # 14
+        self.minWordsAmount = 1
+        self.maxWordsAmount = 2
+        self.maxFrequentCut = 500
         self.wordsFrequency = None
         self.downsizer = Downscale()
         self.trainFileName = trainFileName
@@ -156,29 +158,38 @@ class ReviewClassifier():
 
     def __showConfusionMatrix(self, trueRes, pred):
         """ show the confusion matrix of the test given """
-        import warnings
-        warnings.filterwarnings("ignore")
-        
-        confusionMatrix = [[]] * len(self.__ReviewClass)
-        
-        for index in range(len(self.__ReviewClass)):
-            confusionMatrix[index] = [0] * len(self.__ReviewClass)
-        
-        for trueScore, predictedScore in zip(trueRes, pred):
-            confusionMatrix[trueScore - 1][predictedScore - 1] += 1
-        
-        # deprected
-        for i, line in enumerate(confusionMatrix):
-            print(i, line)
-        
-        labels =   ["1", "2", "3", "4", "5"]
-
-        plotFigure = plt.figure()
-        axesPlot = plotFigure.add_subplot(111)
-        plotFigure.colorbar(axesPlot.matshow(confusionMatrix, cmap='binary'))
-        axesPlot.set_xticklabels([""] + labels)
-        axesPlot.set_yticklabels([""] + labels)
+        matrix = confusion_matrix(trueRes, pred, labels=[x.value for x in self.__ReviewClass])
+        conf_mat = pd.DataFrame(matrix, index = [str(x.value) for x in self.__ReviewClass], columns = [str(x.value) for x in self.__ReviewClass])
+        print(conf_mat)
+        sns.heatmap(conf_mat, fmt="", annot=True)
+        plt.title('Confusion Matrix')
+        plt.ylabel('Actal Values')
+        plt.xlabel('Predicted Values')
         plt.show()
+        
+        # import warnings
+        # warnings.filterwarnings("ignore")
+        
+        # confusionMatrix = [[]] * len(self.__ReviewClass)
+        
+        # for index in range(len(self.__ReviewClass)):
+        #     confusionMatrix[index] = [0] * len(self.__ReviewClass)
+        
+        # for trueScore, predictedScore in zip(trueRes, pred):
+        #     confusionMatrix[trueScore - 1][predictedScore - 1] += 1
+        
+        # # deprected
+        # for i, line in enumerate(confusionMatrix):
+        #     print(i, line)
+        
+        # labels =   ["1", "2", "3", "4", "5"]
+
+        # plotFigure = plt.figure()
+        # axesPlot = plotFigure.add_subplot(111)
+        # plotFigure.colorbar(axesPlot.matshow(confusionMatrix, cmap='binary'))
+        # axesPlot.set_xticklabels([""] + labels)
+        # axesPlot.set_yticklabels([""] + labels)
+        # plt.show()
     
     def __fitModel(self, testFileName):
         """ fit the model per the clf given and predict according to the test file given """

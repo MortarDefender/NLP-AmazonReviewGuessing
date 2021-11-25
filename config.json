@@ -1,4 +1,4 @@
 {
-  "train_data":  "./Test/Automotive.test.json",
-  "test_data": "./Test/Automotive.test.json"
+  "train_data":  "./Test/Sports_and_Outdoors.test.json",
+  "test_data": "./Test/Sports_and_Outdoors.test.json"
 }
