@@ -25,7 +25,6 @@ class ReviewClassifier():
     
     
     def __init__(self, trainFileName):
-        self.debug = False
         self.corpus = list()
         self.classifier = None
         self.maxFeatures = 1000
@@ -35,7 +34,7 @@ class ReviewClassifier():
         self.wordsFrequency = None
         self.downsizer = Downscale()
         self.trainFileName = trainFileName
-        self.vectorizer = CountVectorizer(analyzer='word', ngram_range=(self.minWordsAmount, self.maxWordsAmount)) # , max_features=100000
+        self.vectorizer = CountVectorizer(analyzer='word', ngram_range=(self.minWordsAmount, self.maxWordsAmount))
     
     @staticmethod
     def __disassembleReview(review):
@@ -53,16 +52,14 @@ class ReviewClassifier():
         rateArr = [""] * len(self.__ReviewClass)
          
         with open(self.trainFileName, 'r') as trainFile:
-            lines = trainFile.readlines()
-        
-        count = 0    
+            lines = trainFile.readlines() 
         
         for review in lines:
             text, summery, score = self.__disassembleReview(review)
             
             if score != 0 and text is not None:
-                count += 1
                 rateArr[score - 1] += text + " "
+                
                 if summery is not None:
                     rateArr[score - 1] += summery + " "
         
@@ -108,8 +105,7 @@ class ReviewClassifier():
     def __removeMostFrequentWords(self, corpus):
         """ remove the max frequent words from the corpus """
         frequentWords = [item[0] for item in sorted(self.wordsFrequency.items(), key=lambda kv: kv[1], reverse=True)[:self.maxFrequentCut]]
-        
-        ## remove from each star review this words from it
+
         for i, line in enumerate(corpus):
             corpus[i] = " ".join(list(filter(lambda x: x not in frequentWords, corpus[i].split())))
         
@@ -130,12 +126,6 @@ class ReviewClassifier():
         self.corpus = self.__removeRedundancy(self.__disassembleAllReviews())
         arrayOfAppearances = self.vectorizer.fit_transform(self.corpus)
         return self.downsizer.fit_transform(arrayOfAppearances)
-    
-    @staticmethod
-    def __printPrediction(testReviewsData, predicted):    # can be removed
-        """ print each text review next to his predicted data """
-        for review, score in zip(predicted, predicted):
-            print('%r => %s' % (predicted, score))
     
     @staticmethod
     def __getPredictedData(predicted, trueResults):
@@ -204,11 +194,7 @@ class ReviewClassifier():
         
         new_data = self.vectorizer.transform(testReviewsData)
         tfidf = self.downsizer.transform(new_data)
-        
         predicted = self.classifier.predict(tfidf)
-        
-        if self.debug:  # can be removed
-            self.__printPrediction(testReviewsData, predicted)
         
         return predicted, testReviewsScore, kBestFeatures
     
