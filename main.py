@@ -23,7 +23,6 @@ class ReviewClassifier():
         FourStar  = 4
         FiveStar  = 5
     
-    
     def __init__(self, trainFileName):
         self.corpus = list()
         self.classifier = None
@@ -75,22 +74,24 @@ class ReviewClassifier():
     @staticmethod
     def __removStopWords(text):
         """ remove stop words from the text given """
-        stopwords = ['i', 'I','me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", "you've", "you'll", 
-                         "you'd", 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 
-                         'her', 'hers', 'herself', 'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 
-                         'what', 'which', 'who', 'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 'is', 'are', 'was', 'were', 
-                         'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 
-                         'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 
-                         'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 
-                         'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 
-                         'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 
-                         'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', "don't", 'should', "should've",
-                         'now', 'd', 'll', 'm', 'o', 're', 've', 'y', 'ain', 'aren', "aren't", 'couldn', "couldn't", 'didn', "didn't", 'doesn', 
-                         "doesn't", 'hadn', "hadn't", 'hasn', "hasn't", 'haven', "haven't", 'isn', "isn't", 'ma', 'mightn', "mightn't", 'mustn', 
-                         "mustn't", 'needn', "needn't", 'shan', "shan't", 'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't", 'won', 
-                         "won't", 'wouldn', "wouldn't"]
+        stopwords = ['i', 'I', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", "you've",
+                     "you'll", "you'd", 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she',
+                     "she's", 'her', 'hers', 'herself', 'it', "it's", 'its', 'itself', 'they', 'them', 'their',
+                     'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'this', 'that', "that'll", 'these',
+                     'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having',
+                     'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until',
+                     'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through',
+                     'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on',
+                     'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where',
+                     'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no',
+                     'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just',
+                     'don', "don't", 'should', "should've", 'now', 'd', 'll', 'm', 'o', 're', 've', 'y', 'ain', 'aren',
+                     "aren't", 'couldn', "couldn't", 'didn', "didn't", 'doesn', "doesn't", 'hadn', "hadn't", 'hasn',
+                     "hasn't", 'haven', "haven't", 'isn', "isn't", 'ma', 'mightn', "mightn't", 'mustn', "mustn't",
+                     'needn', "needn't", 'shan', "shan't", 'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't",
+                     'won', "won't", 'wouldn', "wouldn't"]
         
-        return  " ".join(list(filter(lambda x: x not in stopwords and not x.isnumeric(), text.split())))
+        return " ".join(list(filter(lambda x: x not in stopwords and not x.isnumeric(), text.split())))
     
     def __createMostFrequentWords(self, corpus):
         """ creates the most frequent words dictionary """
@@ -162,10 +163,10 @@ class ReviewClassifier():
         plt.xlabel('Predicted Values')
         plt.show()
     
-    def __getBestFeatures(self, maxFeaturesAmount=15):
+    def __getBestFeatures(self, bagOfWords, maxFeaturesAmount=15):
         """ return a list of the maxFeaturesAmount of the classifer given """
         bestFeatures = list()
-        kBest = SelectKBest(chi2, k=maxFeaturesAmount).fit_transform(self.__createBagOfWords(), [x.value for x in self.__ReviewClass])
+        kBest = SelectKBest(chi2, k=maxFeaturesAmount).fit_transform(bagOfWords, [x.value for x in self.__ReviewClass])
         
         for item in list(kBest.todok().keys()):
             bestFeatures.append(self.corpus[item[0]].split(" ")[item[1]])
@@ -174,8 +175,9 @@ class ReviewClassifier():
     
     def __fitModel(self, testFileName):
         """ fit the model per the clf given and predict according to the test file given """
-        self.classifier = self.classifier.fit(self.__createBagOfWords(), [x.value for x in self.__ReviewClass])
-        kBestFeatures = self.__getBestFeatures()
+        bagOfWords = self.__createBagOfWords()
+        self.classifier = self.classifier.fit(bagOfWords, [x.value for x in self.__ReviewClass])
+        kBestFeatures = self.__getBestFeatures(bagOfWords)
         
         testReviewsData = list()
         testReviewsScore = list()
@@ -212,7 +214,6 @@ class ReviewClassifier():
         """ get the maximum possible accuracy of the model using an iteration over max frequent cut"""
         maxNCut = 0
         max_test_results = None
-        current_test_results = {}
         
         for nCut in range(0, maxCut, 50):
             self.maxFrequentCut = nCut
