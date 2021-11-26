@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 from sklearn.metrics import confusion_matrix
 from sklearn.naive_bayes import MultinomialNB
-from sklearn.linear_model import SGDClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_selection import SelectKBest, chi2
 from sklearn.feature_extraction.text import CountVectorizer
@@ -141,19 +140,13 @@ class ReviewClassifier():
         for reviewPrediction, realScore in zip(predicted, trueResults):
             results[realScore - 1] += 1
             test_results["class_{}.0_F1".format(reviewPrediction)] += ((1 / overall) * 100)
-        
-        # for i in range(1, 6, 1):
-        #     test_results["class_{}.0_F1".format(i)] = (test_results["class_{}.0_F1".format(i)] / results[i - 1]) * 100
-        
+
         test_results['accuracy'] =  np.mean(predicted == trueResults) * 100
         
         return test_results       
 
     def __showConfusionMatrix(self, trueRes, pred):
         """ show the confusion matrix of the test given """
-        # import warnings
-        # warnings.filterwarnings("ignore")
-        
         confusionMatrix = confusion_matrix(trueRes, pred, labels=[x.value for x in self.__ReviewClass])
         confusionDataFrame = pd.DataFrame(confusionMatrix, index = [str(x.value) for x in self.__ReviewClass], columns = [str(x.value) for x in self.__ReviewClass])
         print(confusionDataFrame)
@@ -168,7 +161,7 @@ class ReviewClassifier():
         bestFeatures = list()
         kBest = SelectKBest(chi2, k=maxFeaturesAmount).fit_transform(bagOfWords, [x.value for x in self.__ReviewClass])
         
-        for item in list(kBest.todok().keys()):
+        for item in list(kBest.todok().keys())[:15]:
             bestFeatures.append(self.corpus[item[0]].split(" ")[item[1]])
         
         return bestFeatures
@@ -206,7 +199,6 @@ class ReviewClassifier():
         
         if showMatrix:
             self.__showConfusionMatrix(trueResults, predicted)
-            print("best Features: {}".format(kBestFeatures))
         
         return self.__getPredictedData(predicted, trueResults)
     
@@ -232,19 +224,11 @@ class ReviewClassifier():
         """ get the result of the model over the Naive Classifier """
         self.classifier = MultinomialNB()
         return self.__testPossibilities(testFileName)
-        # return self.__getFitResults(testFileName)
     
     def fitLogisticRegression(self, testFileName):
         """ get the result of the model over the Logistic Regression Classifier """
         self.classifier = LogisticRegression(random_state = 0)
         return self.__testPossibilities(testFileName)
-        # return self.__getFitResults(testFileName)
-    
-    def fitSVM(self, testFileName):
-        """ get the result of the model over the SVM Classifier """
-        self.classifier = SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, random_state=42, max_iter=5, tol=None)
-        return self.__testPossibilities(testFileName)
-        # return self.__getFitResults(testFileName)
     
 
 def classify(train_file, test_file):
@@ -252,7 +236,6 @@ def classify(train_file, test_file):
 
     # return ReviewClassifier(train_file).fitNaiveBayes(test_file)
     return ReviewClassifier(train_file).fitLogisticRegression(test_file)
-    # return ReviewClassifier(train_file).fitSVM(test_file)
 
 
 if __name__ == '__main__':

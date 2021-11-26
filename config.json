@@ -1,4 +1,4 @@
 {
-  "train_data":  "./Test/Sports_and_Outdoors.test.json",
-  "test_data": "./Test/Sports_and_Outdoors.test.json"
+  "train_data":  "./Test/Pet_Supplies.test.json",
+  "test_data": "./Test/Pet_Supplies.test.json"
 }
