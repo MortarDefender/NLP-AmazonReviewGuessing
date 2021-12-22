@@ -27,12 +27,12 @@ class ReviewClassifier():
         self.classifier = None
         self.maxFeatures = 1000
         self.minWordsAmount = 1
-        self.maxWordsAmount = 2
-        self.maxFrequentCut = 500
+        self.maxWordsAmount = 5
+        self.maxFrequentCut = 0
         self.wordsFrequency = None
         self.downsizer = Downscale()
         self.trainFileName = trainFileName
-        self.vectorizer = CountVectorizer(analyzer='word', ngram_range=(self.minWordsAmount, self.maxWordsAmount))
+        self.vectorizer = CountVectorizer(analyzer='word', ngram_range=(self.minWordsAmount, self.maxWordsAmount), max_features=self.maxFeatures)
     
     @staticmethod
     def __disassembleReview(review):
@@ -62,6 +62,39 @@ class ReviewClassifier():
                     rateArr[score - 1] += summery + " "
         
         return rateArr
+    
+    def __createTestArray(self):
+        arr = []
+        
+        with open(self.trainFileName, 'r') as trainFile:
+            lines = trainFile.readlines() 
+        
+        for review in lines:
+            text, summery, score = self.__disassembleReview(review)
+            
+            if score != 0 and text is not None:
+                if summery is not None:
+                    text = text + " " + summery
+                    
+                text = self.__removePunctuation(text)
+                text = self.__removStopWords(text)
+                arr.append(text)
+        
+        return arr
+    
+    def __getAllLabels(self):
+        labels = []
+        
+        with open(self.trainFileName, 'r') as trainFile:
+            lines = trainFile.readlines() 
+        
+        for review in lines:
+            text, summery, score = self.__disassembleReview(review)
+            
+            if score != 0 and text is not None:
+                labels.append(score)
+
+        return labels
     
     @staticmethod
     def __removePunctuation(text):
@@ -123,7 +156,7 @@ class ReviewClassifier():
     
     def __createBagOfWords(self):
         """ create the distinct words and words frequency dictionary """
-        self.corpus = self.__removeRedundancy(self.__disassembleAllReviews())
+        self.corpus = self.__createTestArray() # self.__removeRedundancy(self.__disassembleAllReviews())
         arrayOfAppearances = self.vectorizer.fit_transform(self.corpus)
         return self.downsizer.fit_transform(arrayOfAppearances)
     
@@ -169,8 +202,8 @@ class ReviewClassifier():
     def __fitModel(self, testFileName):
         """ fit the model per the clf given and predict according to the test file given """
         bagOfWords = self.__createBagOfWords()
-        self.classifier = self.classifier.fit(bagOfWords, [x.value for x in self.__ReviewClass])
-        kBestFeatures = self.__getBestFeatures(bagOfWords)
+        self.classifier = self.classifier.fit(bagOfWords, self.__getAllLabels()) # [x.value for x in self.__ReviewClass]
+        # kBestFeatures = self.__getBestFeatures(bagOfWords)
         
         testReviewsData = list()
         testReviewsScore = list()
@@ -191,7 +224,7 @@ class ReviewClassifier():
         tfidf = self.downsizer.transform(new_data)
         predicted = self.classifier.predict(tfidf)
         
-        return predicted, testReviewsScore, kBestFeatures
+        return predicted, testReviewsScore, None # kBestFeatures
     
     def __getFitResults(self, testFileName, showMatrix=True):
         """ get the result from the fit method """
@@ -207,7 +240,7 @@ class ReviewClassifier():
         maxNCut = 0
         max_test_results = None
         
-        for nCut in range(0, maxCut, 50):
+        for nCut in range(0, maxCut, 100):
             self.maxFrequentCut = nCut
                     
             current_test_results = self.__getFitResults(testFileName, False)
@@ -228,7 +261,8 @@ class ReviewClassifier():
     def fitLogisticRegression(self, testFileName):
         """ get the result of the model over the Logistic Regression Classifier """
         self.classifier = LogisticRegression(random_state = 0)
-        return self.__testPossibilities(testFileName)
+        return self.__getFitResults(testFileName)
+        # return self.__testPossibilities(testFileName)
     
 
 def classify(train_file, test_file):
