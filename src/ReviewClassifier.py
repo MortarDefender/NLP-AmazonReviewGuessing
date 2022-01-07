@@ -272,12 +272,3 @@ def classify(train_file, test_file):
     # return ReviewClassifier(train_file).fitNaiveBayes(test_file)
     return ReviewClassifier(train_file).fitLogisticRegression(test_file)
 
-
-if __name__ == '__main__':
-    with open('config.json', 'r') as json_file:
-        config = json.load(json_file)
-
-    results = classify(config['train_data'], config['test_data'])
-
-    for k, v in results.items():
-        print(k, v)

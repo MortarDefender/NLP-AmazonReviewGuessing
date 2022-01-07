@@ -1,0 +1,4 @@
+{
+  "train_data":  "./assets/Pet_Supplies.train.json",
+  "test_data": "./assets/Pet_Supplies.test.json"
+}
