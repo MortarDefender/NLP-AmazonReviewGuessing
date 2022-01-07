@@ -1,7 +1,7 @@
 [![Python 3.6](https://img.shields.io/badge/Python-3.6-3776AB)](https://www.python.org/downloads/release/python-360/)
 
 # NLP-Amazon Review Guessing
-____
+Train a classifiew to predict the review score of a basic amazon review.
 
 ## System Requirements:
 - python 3.6 or heighr
@@ -70,3 +70,5 @@ parameters, i.e., no tuning is required.
 # Test Examples:
 
 <img width="45%" height="250px" src="/Demo/confusion_matrix_Automotive.png" /> <img width="45%" height="250px" src="/Demo/confusion_matrix_Pet.png" /> <img width="45%" height="250px" src="/Demo/confusion_matrix_Sports.png" />
+
+as we can see this are the confusion matrix of each of the tests on the topics of Automotive, Pet stores and sports.
