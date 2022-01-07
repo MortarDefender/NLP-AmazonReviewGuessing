@@ -156,7 +156,8 @@ class ReviewClassifier():
     
     def __createBagOfWords(self):
         """ create the distinct words and words frequency dictionary """
-        self.corpus = self.__createTestArray() # self.__removeRedundancy(self.__disassembleAllReviews())
+        # self.corpus = self.__removeRedundancy(self.__disassembleAllReviews())
+        self.corpus = self.__createTestArray()
         arrayOfAppearances = self.vectorizer.fit_transform(self.corpus)
         return self.downsizer.fit_transform(arrayOfAppearances)
     
@@ -202,7 +203,7 @@ class ReviewClassifier():
     def __fitModel(self, testFileName):
         """ fit the model per the clf given and predict according to the test file given """
         bagOfWords = self.__createBagOfWords()
-        self.classifier = self.classifier.fit(bagOfWords, self.__getAllLabels()) # [x.value for x in self.__ReviewClass]
+        self.classifier = self.classifier.fit(bagOfWords, self.__getAllLabels()) #  [x.value for x in self.__ReviewClass]
         # kBestFeatures = self.__getBestFeatures(bagOfWords)
         
         testReviewsData = list()
