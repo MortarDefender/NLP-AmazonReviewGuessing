@@ -20,8 +20,6 @@ python setup.py install
 ```
 
 ## Run:
-Picture Overlay:
-
 ```python
 from ReviewClassifier import classify
 results = classify(train_data_file_name, test_data_file_name)
@@ -32,12 +30,6 @@ or
 ```python
 from ReviewClassifier import ReviewClassifier
 results = ReviewClassifier(train_file_name).fitLogisticRegression(test_file_name)
-```
-
-Object Overlay:
-```python
-from objectOverlay import ObjectOverlay
-ObjectOverlay().render(known_image_file_path, 3d_object_file_path, test_video_file_path, calibration_video_file_path, videoOutput)
 ```
 
 # The Task At Hand:
